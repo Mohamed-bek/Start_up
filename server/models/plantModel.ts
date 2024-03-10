@@ -3,13 +3,13 @@ import User from "./userModel";
 
 export interface IPlant extends Document {
   name: string;
-  decription: string;
+  description: string;
   owner: ObjectId;
   images: { publicId: string; url: string }[];
   price: number;
   quantity: number;
   reviews: {
-    userId: string;
+    userId: ObjectId;
     review: string;
     likes: string[];
   }[];
@@ -29,7 +29,7 @@ const plantSchema = new Schema<IPlant>(
       ref: "User",
       required: [true, " The Owner of the plant is required"],
     },
-    decription: String,
+    description: String,
     images: [
       {
         publicId: String,
@@ -47,7 +47,8 @@ const plantSchema = new Schema<IPlant>(
     reviews: [
       {
         userId: {
-          type: String,
+          type: mongoose.Types.ObjectId,
+          ref: "User",
           required: [true, "user Id is required"],
         },
         review: {

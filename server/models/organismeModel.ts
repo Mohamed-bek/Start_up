@@ -1,14 +1,14 @@
-import mongoose, { Model, Schema, Document } from "mongoose";
+import mongoose, { Model, Schema, Document, ObjectId } from "mongoose";
 
 export interface IOrganisme extends Document {
   name: string;
   position: string;
-  logo: {
-    publicId: string;
+  avatar: {
+    public_id: string;
     url: string;
   };
-  folowers: string[];
-  admins: string[];
+  followers: ObjectId[];
+  admins: ObjectId[];
 }
 
 const organismeSchema = new Schema<IOrganisme>({
@@ -17,18 +17,24 @@ const organismeSchema = new Schema<IOrganisme>({
     required: [true, "name is required"],
   },
   position: String,
-  logo: {
-    publicId: {
+  avatar: {
+    public_id: {
       type: String,
-      required: [true, "public id is required"],
     },
     url: {
       type: String,
-      required: [true, "url is required"],
     },
   },
-  folowers: [String],
-  admins: [String],
+  followers: {
+    type: [mongoose.Types.ObjectId],
+    ref: "User",
+    required: [true, "folowers is required"],
+  },
+  admins: {
+    type: [mongoose.Types.ObjectId],
+    ref: "User",
+    required: [true, "folowers is required"],
+  },
 });
 
 const Organisme: Model<IOrganisme> = mongoose.model(

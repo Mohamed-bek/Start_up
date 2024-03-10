@@ -1,18 +1,12 @@
 import User, { IUser, ERole } from "../models/userModel";
-import { Response, Request, NextFunction } from "express";
+import { Response, Request } from "express";
 import ErrorHandler from "../ErrorHandler";
 import bcrypt from "bcrypt";
 import sendMail from "../utilite/sendMail";
 import fs from "fs";
 import path from "path";
 import ejs from "ejs";
-import {
-  accessTokenOptions,
-  createAccessToken,
-  createRefreshToken,
-  refreshTokenOptions,
-  SendTokens,
-} from "../utilite/sendToken";
+import { SendTokens } from "../utilite/sendToken";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
 const createToken = (user: IUser) => {
@@ -106,31 +100,6 @@ export const login = async (req: Request, res: Response) => {
       throw new Error("Password is incorrect");
     }
     SendTokens(user, 200, res);
-  } catch (err) {
-    ErrorHandler(err, 400, res);
-  }
-};
-
-export const refreshAccessToken = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const refresh_token = req.cookies.refresh_token;
-    if (!refresh_token) {
-      throw new Error("refresh token is not available");
-    }
-    const { id } = jwt.verify(
-      refresh_token,
-      process.env.REFRESH_TOKEN as string
-    ) as JwtPayload;
-    if (!id) {
-      throw new Error("Please Login to access this resource");
-    }
-    res.cookie("access_token", createAccessToken(id), accessTokenOptions);
-    res.cookie("refresh_token", createRefreshToken(id), refreshTokenOptions);
-    next();
   } catch (err) {
     ErrorHandler(err, 400, res);
   }

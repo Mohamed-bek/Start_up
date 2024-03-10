@@ -5,6 +5,8 @@ export enum ERole {
   SPECIALIST = "specialist",
   SELLER = "seller",
   FREELANCER = "freelancer",
+  ADMIN = "admin",
+  ORGANISME = "organisme",
 }
 export interface IUser extends Document {
   firstName: string;

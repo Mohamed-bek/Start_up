@@ -2,8 +2,8 @@ import { Response, Request } from "express";
 import { IArticle, IReplie } from "../models/articleModel";
 import ErrorHandler from "../ErrorHandler";
 import Article from "../models/articleModel";
-import redis from "../utilite/redis";
-import mongoose from "mongoose";
+import mongoose, { ObjectId } from "mongoose";
+import { makeNotifiaction } from "./notificationController";
 require("dotenv").config();
 
 export const createArticle = async (req: Request, res: Response) => {
@@ -56,10 +56,20 @@ export const updateArticle = async (req: Request, res: Response) => {
 
 export const getArticles = async (req: Request, res: Response) => {
   try {
-    const articles = await Article.find().populate(
-      "creatorId",
-      "firstName lastName avatar"
-    );
+    const articles = await Article.find().populate([
+      {
+        path: "creatorId",
+        select: "fisrtName lastName avatar",
+      },
+      {
+        path: "comments.userId",
+        select: "fisrtName lastName avatar",
+      },
+      {
+        path: "comments.replies.userId",
+        select: "fisrtName lastName avatar",
+      },
+    ]);
     res.status(200).json({ articles });
   } catch (err) {
     ErrorHandler(err, 400, res);
@@ -68,10 +78,20 @@ export const getArticles = async (req: Request, res: Response) => {
 
 export const getArticle = async (req: Request, res: Response) => {
   try {
-    const article = await Article.findById(req.params.id).populate(
-      "creatorId",
-      "firstName lastName avatar"
-    );
+    const article = await Article.findById(req.params.id).populate([
+      {
+        path: "creatorId",
+        select: "fisrtName lastName avatar",
+      },
+      {
+        path: "comments.userId",
+        select: "fisrtName lastName avatar",
+      },
+      {
+        path: "comments.replies.userId",
+        select: "fisrtName lastName avatar",
+      },
+    ]);
     res.status(200).json({ article });
   } catch (err) {
     ErrorHandler(err, 400, res);
@@ -81,10 +101,20 @@ export const getArticle = async (req: Request, res: Response) => {
 export const getArticleByFilter = async (req: Request, res: Response) => {
   try {
     const filter = req.body;
-    const articles = await Article.find(filter).populate(
-      "creatorId",
-      "firstName lastName avatar"
-    );
+    const articles = await Article.find(filter).populate([
+      {
+        path: "creatorId",
+        select: "fisrtName lastName avatar",
+      },
+      {
+        path: "comments.userId",
+        select: "fisrtName lastName avatar",
+      },
+      {
+        path: "comments.replies.userId",
+        select: "fisrtName lastName avatar",
+      },
+    ]);
     res.status(200).json({ articles });
   } catch (err) {
     ErrorHandler(err, 400, res);
@@ -93,11 +123,15 @@ export const getArticleByFilter = async (req: Request, res: Response) => {
 
 export const likeArticle = async (req: Request, res: Response) => {
   try {
-    const id = (req as any).user._id;
+    const user = (req as any).user;
     const article = (await Article.findById(req.params.id)) as IArticle;
-    const index = article.likes.findIndex((l) => l == id);
+    const index = article.likes.findIndex((l) => l == user._id);
     if (index === -1) {
-      article.likes.push(id);
+      article.likes.push(user._id);
+      if (user._id != article.creatorId) {
+        const content = `${user.firstName} ${user.lastName} like your article: ${article.title}`;
+        await makeNotifiaction(article.creatorId, content);
+      }
     } else {
       article.likes.splice(index, 1);
     }
@@ -111,8 +145,13 @@ export const likeArticle = async (req: Request, res: Response) => {
 export const commentArticle = async (req: Request, res: Response) => {
   try {
     const { comment } = req.body;
+    const user = (req as any).user;
     const article = (await Article.findById(req.params.id)) as IArticle;
-    article.comments.push({ userId: (req as any).user._id, comment } as any);
+    article.comments.push({ userId: user._id, comment } as any);
+    if (user._id != article.creatorId) {
+      const content = `${user.firstName} ${user.lastName} comment on your article : ${article.title}`;
+      await makeNotifiaction(article.creatorId, content);
+    }
     await article.save();
     res.status(200).json({ success: true });
   } catch (err) {
@@ -132,6 +171,10 @@ export const likeComment = async (req: Request, res: Response) => {
     const index = comment?.likesId.findIndex((id) => id == user._id) as number;
     if (index === -1) {
       comment?.likesId.push(user._id);
+      if (user._id != comment?.userId) {
+        const content = `${user.firstName} ${user.lastName} like your comment: ${comment?.comment}`;
+        await makeNotifiaction(comment?.userId as ObjectId, content);
+      }
     } else {
       comment?.likesId.splice(index, 1);
     }
@@ -159,6 +202,10 @@ export const replyComment = async (req: Request, res: Response) => {
     }
     comment.replies.push({ userId: user._id, comment: reply } as IReplie);
     await article.save();
+    if (user._id != comment?.userId) {
+      const content = `${user.firstName} ${user.lastName} reply to your comment: ${reply}`;
+      await makeNotifiaction(comment?.userId as ObjectId, content);
+    }
     res.status(200).json({ success: true });
   } catch (err) {
     ErrorHandler(err, 400, res);
@@ -181,6 +228,10 @@ export const likeReply = async (req: Request, res: Response) => {
     const index = reply?.likesId.findIndex((id) => id == user._id) as number;
     if (index === -1) {
       reply?.likesId.push(user._id);
+      if (user._id != reply.userId) {
+        const content = `${user.firstName} ${user.lastName} like your reply: ${reply.comment}`;
+        await makeNotifiaction(reply.userId, content);
+      }
     } else {
       reply?.likesId.splice(index, 1);
     }
@@ -199,6 +250,11 @@ export const removeComment = async (req: Request, res: Response) => {
       throw new Error("Invalid comment ID");
     }
     const article = (await Article.findById(req.params.id)) as IArticle;
+    if (article.creatorId != (req as any).user._id) {
+      throw new Error(
+        "You cant delete this comment , this article is not yours"
+      );
+    }
     const index = article.comments.findIndex(
       (c) => ((c as any)._id = commentId)
     );

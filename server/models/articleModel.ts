@@ -2,7 +2,7 @@ import mongoose, { Model, Schema, Document, ObjectId } from "mongoose";
 import User from "./userModel";
 
 export interface IReplie extends Document {
-  userId: string;
+  userId: ObjectId;
   comment: string;
   likesId: string[];
 }
@@ -10,7 +10,7 @@ export interface IReplie extends Document {
 export interface IArticle extends Document {
   likes: string[];
   comments: {
-    userId: string;
+    userId: ObjectId;
     comment: string;
     likesId: string[];
     replies: IReplie[];
@@ -25,7 +25,10 @@ export interface IArticle extends Document {
 }
 
 const replieSchema = new Schema<IReplie>({
-  userId: mongoose.Types.ObjectId,
+  userId: {
+    type: mongoose.Types.ObjectId,
+    ref: "User",
+  },
   comment: {
     type: String,
     required: [true, "comment is required"],
@@ -39,7 +42,8 @@ const articleSchema = new Schema<IArticle>({
     {
       userId: {
         required: [true, "User Id is required"],
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
       },
       comment: {
         required: [true, "Comment is required"],

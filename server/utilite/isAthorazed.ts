@@ -2,7 +2,37 @@ import { Response, Request, NextFunction } from "express";
 import ErrorHandler from "../ErrorHandler";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import redis from "./redis";
-import { IUser } from "../models/userModel";
+import {
+  accessTokenOptions,
+  createAccessToken,
+  createRefreshToken,
+  refreshTokenOptions,
+} from "../utilite/sendToken";
+
+export const refreshAccessToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const refresh_token = req.cookies.refresh_token;
+    if (!refresh_token) {
+      throw new Error("refresh token is not available");
+    }
+    const { id } = jwt.verify(
+      refresh_token,
+      process.env.REFRESH_TOKEN as string
+    ) as JwtPayload;
+    if (!id) {
+      throw new Error("Please the Id is deadline");
+    }
+    await res.cookie("access_token", createAccessToken(id), accessTokenOptions);
+    res.cookie("refresh_token", createRefreshToken(id), refreshTokenOptions);
+    next();
+  } catch (err) {
+    ErrorHandler(err, 400, res);
+  }
+};
 
 export const isAuthorized = async (
   req: Request,
