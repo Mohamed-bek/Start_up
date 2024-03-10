@@ -13,6 +13,8 @@ import {
   removeComment,
   replyComment,
   updateArticle,
+  updateComment,
+  updateReplie,
 } from "../controllers/articleController";
 import { ERole } from "../models/userModel";
 import { isAuthorizedRole } from "../utilite/isAthorazed";
@@ -46,5 +48,7 @@ articleRouter.delete(
   isAuthorizedRole(ERole.SPECIALIST),
   removeComment
 );
+articleRouter.put("/update_comment_article/:id", updateComment);
+articleRouter.put("/update_reply_article/:id", updateReplie);
 
 export default articleRouter;

@@ -269,3 +269,65 @@ export const removeComment = async (req: Request, res: Response) => {
     ErrorHandler(err, 400, res);
   }
 };
+
+export const updateComment = async (req: Request, res: Response) => {
+  try {
+    const { commentId, newComment } = req.body;
+    const user = (req as any).user;
+    if (!mongoose.isValidObjectId(commentId)) {
+      throw new Error("Invalid comment ID");
+    }
+    const article = (await Article.findById(req.params.id)) as IArticle;
+    if (!article) {
+      throw new Error("Article does not exist");
+    }
+    const comment = article.comments.find((c) => ((c as any)._id = commentId));
+    if (!comment) {
+      throw new Error("Comment does not exist");
+    }
+    if (comment.userId != user._id)
+      throw new Error("you cant update this comment is not yours");
+    comment.comment = newComment;
+    await article.save();
+    if (user._id != comment?.userId) {
+      const content = `${user.firstName} ${user.lastName} update his comment in your Article to ${comment.comment}`;
+      await makeNotifiaction(article.creatorId, content);
+    }
+    res.status(200).json({ success: true });
+  } catch (err) {
+    ErrorHandler(err, 400, res);
+  }
+};
+
+export const updateReplie = async (req: Request, res: Response) => {
+  try {
+    const { commentId, replyId, newReply } = req.body;
+    const user = (req as any).user;
+    if (!mongoose.isValidObjectId(commentId)) {
+      throw new Error("Invalid comment ID");
+    }
+    const article = (await Article.findById(req.params.id)) as IArticle;
+    if (!article) {
+      throw new Error("Article does not exist");
+    }
+    const comment = article.comments.find((c) => ((c as any)._id = commentId));
+    if (!comment) {
+      throw new Error("Comment does not exist");
+    }
+    const reply = comment?.replies.find((rep) => (rep as any)._id == replyId);
+    if (!reply) {
+      throw new Error("Reply does not exist");
+    }
+    if (reply.userId != user._id)
+      throw new Error("you cant update this comment is not yours");
+    reply.comment = newReply;
+    await article.save();
+    if (user._id != comment?.userId) {
+      const content = `${user.firstName} ${user.lastName} update his reply in your comment to ${newReply}`;
+      await makeNotifiaction(comment.userId, content);
+    }
+    res.status(200).json({ success: true });
+  } catch (err) {
+    ErrorHandler(err, 400, res);
+  }
+};

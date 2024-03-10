@@ -13,6 +13,7 @@ import {
   changeQuantityPlant,
   changePriceOfPlant,
   getSellerPlants,
+  updateReview,
 } from "../controllers/plantController";
 import { ERole } from "../models/userModel";
 import { isAuthorizedRole } from "../utilite/isAthorazed";
@@ -43,6 +44,7 @@ plantRoute.put(
   isAuthorizedRole(ERole.SELLER),
   changePriceOfPlant
 );
+plantRoute.put("/update_review_plant/:id", updateReview);
 plantRoute.get(
   "/seller_plants/",
   isAuthorizedRole(ERole.SELLER),

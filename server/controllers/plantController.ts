@@ -291,3 +291,27 @@ export const getSellerPlants = async (req: Request, res: Response) => {
     ErrorHandler(err, 400, res);
   }
 };
+
+export const updateReview = async (req: Request, res: Response) => {
+  try {
+    const { reviewId, newReview } = req.body;
+    const user = (req as any).user;
+    const plant = await Plant.findById(req.params.id);
+    if (!plant) {
+      throw new Error("id Plant does not exist");
+    }
+    const review = plant.reviews.find((rev) => (rev as any)._id == reviewId);
+    if (!review) {
+      throw new Error("this review is not available");
+    }
+    if (review.userId != user._id)
+      throw new Error("This is note your comment you can't updated");
+    review.review = newReview;
+    await plant.save();
+    const content = `${user.firstName} ${user.lastName} update his review about your plant: ${plant.name}`;
+    await makeNotifiaction(plant.owner, content);
+    res.status(200).json({ success: true });
+  } catch (err) {
+    ErrorHandler(err, 400, res);
+  }
+};
