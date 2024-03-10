@@ -5,7 +5,7 @@ export interface IPlant extends Document {
   name: string;
   description: string;
   owner: ObjectId;
-  images: { publicId: string; url: string }[];
+  images: { public_id: string; url: string }[];
   price: number;
   quantity: number;
   reviews: {
@@ -32,7 +32,7 @@ const plantSchema = new Schema<IPlant>(
     description: String,
     images: [
       {
-        publicId: String,
+        public_id: String,
         url: String,
       },
     ],

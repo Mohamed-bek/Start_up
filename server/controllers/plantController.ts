@@ -2,17 +2,31 @@ import Plant, { IPlant } from "../models/plantModel";
 import { Response, Request, NextFunction } from "express";
 import ErrorHandler from "../ErrorHandler";
 import { makeNotifiaction } from "./notificationController";
+import cloudinary from "cloudinary";
 
 export const addPlant = async (req: Request, res: Response) => {
   try {
     const { name, description, price, images, quantity }: IPlant = req.body;
+    let ArrImages: { public_id: string; url: string }[] = [];
+    if (images.length > 0) {
+      for (const image of images) {
+        const myCloud = await cloudinary.v2.uploader.upload(image.toString(), {
+          folder: "avatars",
+          width: 150,
+        });
+        ArrImages.push({
+          public_id: myCloud.public_id,
+          url: myCloud.url,
+        });
+      }
+    }
     const plant: IPlant = await Plant.create({
       name,
       description,
       price,
-      images,
       owner: (req as any).user._id,
       quantity,
+      images: ArrImages,
     });
     res.status(200).json({ success: true, plant });
   } catch (e) {

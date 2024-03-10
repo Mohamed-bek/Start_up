@@ -2,6 +2,7 @@ import { Response, Request } from "express";
 import { IArticle, IReplie } from "../models/articleModel";
 import ErrorHandler from "../ErrorHandler";
 import Article from "../models/articleModel";
+import cloudinary from "cloudinary";
 import mongoose, { ObjectId } from "mongoose";
 import { makeNotifiaction } from "./notificationController";
 require("dotenv").config();
@@ -9,11 +10,19 @@ require("dotenv").config();
 export const createArticle = async (req: Request, res: Response) => {
   try {
     const { title, content, image } = req.body;
+    if (!image) throw new Error("You must provide an image");
+    const myCloud = await cloudinary.v2.uploader.upload(image.toString(), {
+      folder: "articleImages",
+      width: 150,
+    });
     const article = await Article.create({
       title,
       content,
       creatorId: (req as any).user._id,
-      image,
+      image: {
+        public_id: myCloud.public_id,
+        url: myCloud.url,
+      },
     });
     if (!article) {
       throw new Error("Article not created");
@@ -39,16 +48,24 @@ export const deleteArticle = async (req: Request, res: Response) => {
 
 export const updateArticle = async (req: Request, res: Response) => {
   try {
-    const { title, content } = req.body;
-    const article = await Article.findById(req.params.id);
+    const { title, content, image } = req.body;
+    const article = (await Article.findById(req.params.id)) as IArticle;
     if (article?.creatorId != (req as any).user._id) {
       throw new Error("You cant delete this article , it's not yours");
     }
-    const newArticle = await Article.findByIdAndUpdate(req.params.id, {
-      title,
-      content,
-    });
-    res.status(200).json({ article: newArticle });
+    if (title) article.title = title;
+    if (content) article.content = content;
+    if (image) {
+      if (article.image.public_id)
+        await cloudinary.v2.uploader.destroy(article.image.public_id);
+      const myCloud = await cloudinary.v2.uploader.upload(image.toString(), {
+        folder: "avatars",
+        width: 150,
+      });
+      article.image.public_id = myCloud.public_id;
+      article.image.url = myCloud.url;
+    }
+    res.status(200).json({ article });
   } catch (err) {
     ErrorHandler(err, 400, res);
   }
