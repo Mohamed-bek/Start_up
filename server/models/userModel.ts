@@ -17,11 +17,10 @@ export interface IUser extends Document {
   password: string;
   location: string;
   avatar: {
-    publicId: string;
+    public_id: string;
     url: string;
   };
   role: ERole;
-  specialite?: string;
 }
 
 const userSchema = new Schema<IUser>(
@@ -40,7 +39,7 @@ const userSchema = new Schema<IUser>(
       unique: true,
     },
     avatar: {
-      publicId: String,
+      public_id: String,
       url: String,
     },
     phoneNumber: {
@@ -56,7 +55,6 @@ const userSchema = new Schema<IUser>(
       enum: Object.values(ERole),
       default: ERole.USER,
     },
-    specialite: String,
   },
   { timestamps: true }
 );

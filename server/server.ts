@@ -16,6 +16,7 @@ import freelancerRouter from "./routes/freelancerRoutes";
 import organismeRouter from "./routes/organismeRoutes";
 import { v2 as cloudinary } from "cloudinary";
 import portfolioRouter from "./routes/portfolioRoutes";
+import userRouter from "./routes/userRoutes";
 
 require("dotenv").config();
 
@@ -62,3 +63,4 @@ server.use(specialisteRouter);
 server.use(freelancerRouter);
 server.use(organismeRouter);
 server.use(portfolioRouter);
+server.use(userRouter);
