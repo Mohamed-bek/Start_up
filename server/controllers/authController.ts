@@ -41,10 +41,14 @@ export const SignUp = async (req: Request, res: Response) => {
       subject: "Your activation code",
     };
     await sendMail(mailOptions);
-    res.cookie("jwt", token, {
-      maxAge: 60 * 60 * 24,
-      expires: new Date(Date.now() + 60 * 60 * 24 * 1000),
-    });
+    if (origin && origin.includes("localhost")) {
+      res.cookie("jwt", token, {
+        maxAge: 60 * 60 * 24,
+        expires: new Date(Date.now() + 60 * 60 * 24 * 1000),
+      });
+    } else {
+      res.setHeader("jwt", token);
+    }
     res.status(200).json({ token, activation });
   } catch (err) {
     ErrorHandler(err, 400, res);
@@ -54,7 +58,13 @@ export const SignUp = async (req: Request, res: Response) => {
 export const Activation = async (req: Request, res: Response) => {
   try {
     const activationCode = req.body.activationCode;
-    const token = req.cookies.jwt;
+    const origin = req.headers.origin;
+    let token;
+    if (origin && origin.includes("localhost")) {
+      token = req.cookies.jwt;
+    } else {
+      token = req.headers.jwt;
+    }
     if (!token) {
       throw new Error("Invalid Token , You have to Sign Up  again.");
     }
@@ -79,11 +89,15 @@ export const Activation = async (req: Request, res: Response) => {
     if (!newUser) {
       throw new Error("user is not created");
     }
-    res.cookie("jwt", "", {
-      maxAge: 0,
-      expires: new Date(Date.now() + 0),
-    });
-    SendTokens(newUser, 200, res);
+    if (origin && origin.includes("localhost")) {
+      res.cookie("jwt", "", {
+        maxAge: 0,
+        expires: new Date(Date.now() + 0),
+      });
+    } else {
+      res.setHeader("jwt", "");
+    }
+    SendTokens(newUser, 200, res, req);
   } catch (err) {
     ErrorHandler(err, 400, res);
   }
@@ -99,7 +113,7 @@ export const login = async (req: Request, res: Response) => {
     if (!(await bcrypt.compare(password, user.password))) {
       throw new Error("Password is incorrect");
     }
-    SendTokens(user, 200, res);
+    SendTokens(user, 200, res, req);
   } catch (err) {
     ErrorHandler(err, 400, res);
   }
@@ -119,7 +133,7 @@ export const updateUserRole = async (req: Request, res: Response) => {
     if (!user) {
       throw new Error("Canot update user role");
     }
-    SendTokens(user, 200, res);
+    SendTokens(user, 200, res, req);
   } catch (err) {
     ErrorHandler(err, 400, res);
   }

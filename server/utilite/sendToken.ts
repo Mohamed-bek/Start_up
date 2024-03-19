@@ -1,6 +1,6 @@
 import redis from "./redis";
 import { IUser } from "../models/userModel";
-import { Response } from "express";
+import { Response, Request } from "express";
 import jwt from "jsonwebtoken";
 require("dotenv").config();
 
@@ -51,7 +51,8 @@ export const refreshTokenOptions: TokenOptions = {
 export const SendTokens = async (
   user: IUser,
   statusCode: number,
-  res: Response
+  res: Response,
+  req: Request
 ) => {
   const accessToken = createAccessToken(user._id);
   const refreshToken = createRefreshToken(user._id);
@@ -65,18 +66,15 @@ export const SendTokens = async (
   process.env.NODE_ENV === "production"
     ? (accessTokenOptions.secure = true)
     : null;
-  res.cookie("refresh_token", refreshToken, refreshTokenOptions);
-  res.cookie("access_token", accessToken, accessTokenOptions);
-  const {
-    email,
-    firstName,
-    lastName,
-    birthday,
-    avatar,
-    specialite,
-    _id,
-    role,
-  } = user;
+  const origin = req.headers.origin;
+  if (origin && origin.includes("localhost")) {
+    res.cookie("refresh_token", refreshToken, refreshTokenOptions);
+    res.cookie("access_token", accessToken, accessTokenOptions);
+  } else {
+    res.setHeader("refresh_token", refreshToken);
+    res.setHeader("access_token", accessToken);
+  }
+  const { email, firstName, lastName, birthday, avatar, _id, role } = user;
   res.status(statusCode).json({
     success: true,
     user: {
@@ -86,7 +84,6 @@ export const SendTokens = async (
       birthday,
       role,
       avatar,
-      specialite,
       _id,
     },
     accessToken,
