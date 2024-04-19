@@ -1,11 +1,11 @@
 import cookieParser from "cookie-parser";
-import express from "express";
+import express, { Response, Request, NextFunction } from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import plantRoute from "./routes/plantRoutes";
 import authRouter from "./routes/authRoutes";
 import articleRouter from "./routes/articleRoutes";
-import { isAuthorized, refreshAccessToken } from "./utilite/isAthorazed";
+import { isAuthorized } from "./utilite/isAthorazed";
 import purchaseRouter from "./routes/purchaseRoutes";
 import problemRouter from "./routes/porblemRoutes";
 import projectRouter from "./routes/projectRoutes";
@@ -17,10 +17,34 @@ import organismeRouter from "./routes/organismeRoutes";
 import { v2 as cloudinary } from "cloudinary";
 import portfolioRouter from "./routes/portfolioRoutes";
 import userRouter from "./routes/userRoutes";
+import rateLimit from "express-rate-limit";
+import Visitor from "./models/visitorModel";
 
 require("dotenv").config();
 
 const server = express();
+
+const limiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // Max 100 requests per minute per IP
+});
+
+server.use(async (req: Request, res: Response, next: NextFunction) => {
+  const visitor = await Visitor.findOne({ ip: req.ip });
+  if (visitor) {
+    visitor.pageView += 1;
+    await visitor.save();
+  } else {
+    await Visitor.create({ ip: req.ip });
+  }
+  next();
+});
+
+server.use(
+  cors({
+    origin: "http://localhost:3000",
+  })
+);
 
 cloudinary.config({
   cloud_name: process.env.CLOUDE_NAME,
@@ -29,11 +53,7 @@ cloudinary.config({
 });
 
 server.use(express.json({ limit: "50mb" }));
-server.use(
-  cors({
-    origin: process.env.ORIGIN,
-  })
-);
+
 server.use(cookieParser());
 
 const connectionDB = async () => {
@@ -49,9 +69,9 @@ const connectionDB = async () => {
 };
 
 connectionDB();
+server.use(limiter);
 server.use(authRouter);
-server.use(refreshAccessToken);
-server.use(isAuthorized);
+// server.use(isAuthorized);
 server.use(plantRoute);
 server.use(purchaseRouter);
 server.use(articleRouter);

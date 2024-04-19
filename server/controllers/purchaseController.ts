@@ -2,6 +2,9 @@ import { Response, Request } from "express";
 import ErrorHandler from "../ErrorHandler";
 import Plant, { IPlant } from "../models/plantModel";
 import Purchase from "../models/purchaseModel";
+import User from "../models/userModel";
+import purchaseRouter from "../routes/purchaseRoutes";
+import { generateLast12MonthsData } from "../utilite/analytics";
 import { makeNotifiaction } from "./notificationController";
 require("dotenv").config();
 
@@ -71,7 +74,7 @@ export const getPurchases = async (req: Request, res: Response) => {
       },
       {
         path: "purchases.plantId",
-        select: "name",
+        select: "name images",
       },
     ]);
     res.status(200).json({ success: true, purchases });
@@ -121,10 +124,19 @@ export const getSellerPurchaes = async (req: Request, res: Response) => {
           (p) => p.sellerId.toString() === (req as any).user._id
         ),
         clientId: purchase.clientId,
-        date: purchase.date,
+        date: (purchase as any).createdAt,
       };
     });
     res.status(200).json({ success: true, purchases: sellerPurchases });
+  } catch (err) {
+    ErrorHandler(err, 400, res);
+  }
+};
+
+export const getAnalyticsPurchases = async (req: Request, res: Response) => {
+  try {
+    const analyticsUsers = await generateLast12MonthsData(Purchase);
+    res.status(200).json({ success: true, purchases: analyticsUsers });
   } catch (err) {
     ErrorHandler(err, 400, res);
   }

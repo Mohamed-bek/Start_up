@@ -1,49 +1,7 @@
 import { Response, Request, NextFunction } from "express";
 import ErrorHandler from "../ErrorHandler";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import redis from "./redis";
-import {
-  accessTokenOptions,
-  createAccessToken,
-  createRefreshToken,
-  refreshTokenOptions,
-} from "../utilite/sendToken";
-
-export const refreshAccessToken = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    let refresh_token;
-    const origin = req.headers.origin;
-    if (origin && origin.includes("localhost")) {
-      refresh_token = req.cookies.refresh_token;
-    } else {
-      refresh_token = req.headers["refresh_token"];
-    }
-    if (!refresh_token) {
-      throw new Error("Access token not provided");
-    }
-    const { id } = jwt.verify(
-      refresh_token,
-      process.env.REFRESH_TOKEN as string
-    ) as JwtPayload;
-    if (!id) {
-      throw new Error("Please the Id is deadline");
-    }
-    if (origin && origin.includes("localhost")) {
-      res.cookie("access_token", createAccessToken(id), accessTokenOptions);
-      res.cookie("refresh_token", createRefreshToken(id), refreshTokenOptions);
-    } else {
-      res.setHeader("refresh_token", createAccessToken(id));
-      res.setHeader("access_token", createRefreshToken(id));
-    }
-    next();
-  } catch (err) {
-    ErrorHandler(err, 400, res);
-  }
-};
 
 export const isAuthorized = async (
   req: Request,
@@ -51,17 +9,17 @@ export const isAuthorized = async (
   next: NextFunction
 ) => {
   try {
-    let token;
-    const origin = req.headers.origin;
-    if (origin && origin.includes("localhost")) {
-      token = req.cookies.access_token;
-    } else {
-      token = req.headers["refresh_token"];
+    let access_token = req.headers.authorization;
+    if (!access_token) {
+      access_token = req.cookies.access_token;
+      if (!access_token) {
+        throw new Error(`Access Token expired`);
+      }
     }
-    if (!token) {
-      throw new Error(`Please Login to access this`);
-    }
-    const { id } = jwt.verify(token, process.env.ACCESS_TOKEN as string) as {
+    const { id } = jwt.verify(
+      access_token,
+      process.env.ACCESS_TOKEN as string
+    ) as {
       id: any;
       type: string;
     };
@@ -71,8 +29,12 @@ export const isAuthorized = async (
     }
     (req as any).user = JSON.parse(user);
     next();
-  } catch (err) {
-    ErrorHandler(err, 400, res);
+  } catch (err: any) {
+    if (err.message === "Access Token expired") {
+      ErrorHandler(err, 401, res);
+    } else {
+      ErrorHandler(err, 400, res);
+    }
   }
 };
 

@@ -1,7 +1,11 @@
 import { Response, Request } from "express";
 import ErrorHandler from "../ErrorHandler";
-import User, { IUser } from "../models/userModel";
+import User, { ERole, IUser } from "../models/userModel";
 import cloudinary from "cloudinary";
+import Visitor from "../models/visitorModel";
+import { generateLast6MonthsData } from "../utilite/analytics";
+import Purchase from "../models/purchaseModel";
+import Plant from "../models/plantModel";
 require("dotenv").config();
 
 export const updateUserInfo = async (req: Request, res: Response) => {
@@ -44,6 +48,61 @@ export const updateUserAvatar = async (req: Request, res: Response) => {
     res.status(200).json({
       success: true,
       user,
+    });
+  } catch (err) {
+    ErrorHandler(err, 400, res);
+  }
+};
+
+export const getUsers = async (req: Request, res: Response) => {
+  try {
+    const users = await User.find().select("-password");
+    res.status(200).json({
+      success: true,
+      users,
+    });
+  } catch (err) {
+    ErrorHandler(err, 400, res);
+  }
+};
+
+export const getAdminInfoPurchases = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const totaleSellers = await User.countDocuments({ role: ERole.ADMIN });
+    const totaleUsers = await User.countDocuments();
+    const totaleVisitor = await Visitor.countDocuments();
+    const totaleSales = await Purchase.countDocuments();
+    const totalePlants = await Plant.countDocuments();
+    const analyticsUsers = await generateLast6MonthsData(Purchase);
+    const visitorAnalytics = await generateLast6MonthsData(Purchase);
+    const users = await User.find();
+    const purchases = await Purchase.find().populate([
+      {
+        path: "purchases.sellerId",
+        select: "firstName lastName avatar",
+      },
+      {
+        path: "clientId",
+        select: "firstName lastName avatar",
+      },
+      {
+        path: "purchases.plantId",
+        select: "name images",
+      },
+    ]);
+    res.status(200).json({
+      success: true,
+      user,
+      totalePlants,
+      totaleSellers,
+      totaleSales,
+      analyticsUsers,
+      purchases,
+      users,
+      totaleUsers,
+      totaleVisitor,
+      visitorAnalytics,
     });
   } catch (err) {
     ErrorHandler(err, 400, res);

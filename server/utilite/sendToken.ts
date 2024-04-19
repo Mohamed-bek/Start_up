@@ -66,14 +66,9 @@ export const SendTokens = async (
   process.env.NODE_ENV === "production"
     ? (accessTokenOptions.secure = true)
     : null;
-  const origin = req.headers.origin;
-  if (origin && origin.includes("localhost")) {
-    res.cookie("refresh_token", refreshToken, refreshTokenOptions);
-    res.cookie("access_token", accessToken, accessTokenOptions);
-  } else {
-    res.setHeader("refresh_token", refreshToken);
-    res.setHeader("access_token", accessToken);
-  }
+  res.cookie("refresh_token", refreshToken, refreshTokenOptions);
+  res.cookie("access_token", accessToken, accessTokenOptions);
+
   const { email, firstName, lastName, birthday, avatar, _id, role } = user;
   res.status(statusCode).json({
     success: true,
@@ -87,5 +82,6 @@ export const SendTokens = async (
       _id,
     },
     accessToken,
+    refreshToken,
   });
 };

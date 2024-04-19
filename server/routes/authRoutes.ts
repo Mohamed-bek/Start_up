@@ -4,6 +4,7 @@ import {
   login,
   SignUp,
   updateUserRole,
+  refreshAccessToken,
 } from "../controllers/authController";
 import { ERole } from "../models/userModel";
 import { isAuthorizedRole } from "../utilite/isAthorazed";
@@ -18,5 +19,6 @@ authRouter.put(
   isAuthorizedRole(ERole.ADMIN),
   updateUserRole
 );
+authRouter.put("/refresh_token", refreshAccessToken);
 
 export default authRouter;

@@ -8,6 +8,12 @@ import path from "path";
 import ejs from "ejs";
 import { SendTokens } from "../utilite/sendToken";
 import jwt, { JwtPayload } from "jsonwebtoken";
+import {
+  accessTokenOptions,
+  createAccessToken,
+  createRefreshToken,
+  refreshTokenOptions,
+} from "../utilite/sendToken";
 
 const createToken = (user: IUser) => {
   const activation = Math.floor(1000 + Math.random() * 9000).toString();
@@ -41,14 +47,9 @@ export const SignUp = async (req: Request, res: Response) => {
       subject: "Your activation code",
     };
     await sendMail(mailOptions);
-    if (origin && origin.includes("localhost")) {
-      res.cookie("jwt", token, {
-        maxAge: 60 * 60 * 24,
-        expires: new Date(Date.now() + 60 * 60 * 24 * 1000),
-      });
-    } else {
-      res.setHeader("jwt", token);
-    }
+    res.cookie("jwt", token, {
+      expires: new Date(Date.now() + 60 * 60 * 24 * 1000),
+    });
     res.status(200).json({ token, activation });
   } catch (err) {
     ErrorHandler(err, 400, res);
@@ -58,15 +59,12 @@ export const SignUp = async (req: Request, res: Response) => {
 export const Activation = async (req: Request, res: Response) => {
   try {
     const activationCode = req.body.activationCode;
-    const origin = req.headers.origin;
-    let token;
-    if (origin && origin.includes("localhost")) {
-      token = req.cookies.jwt;
-    } else {
-      token = req.headers.jwt;
-    }
+    let token = req.headers.authorization;
     if (!token) {
-      throw new Error("Invalid Token , You have to Sign Up  again.");
+      token = req.cookies.jwt;
+      if (!token) {
+        throw new Error("Invalid Token , You have to Sign Up  again.");
+      }
     }
     const { user, activation } = jwt.verify(
       token,
@@ -134,6 +132,36 @@ export const updateUserRole = async (req: Request, res: Response) => {
       throw new Error("Canot update user role");
     }
     SendTokens(user, 200, res, req);
+  } catch (err) {
+    ErrorHandler(err, 400, res);
+  }
+};
+
+export const refreshAccessToken = async (req: Request, res: Response) => {
+  try {
+    let refresh_token = req.headers.authorization;
+    if (!refresh_token) {
+      refresh_token = req.cookies.refresh_token;
+      if (!refresh_token) {
+        throw new Error(`Refresh Token expired you must login again`);
+      }
+    }
+    const { id } = jwt.verify(
+      refresh_token,
+      process.env.REFRESH_TOKEN as string
+    ) as JwtPayload;
+    if (!id) {
+      throw new Error("Please the Id is deadline");
+    }
+    const AccessToken = createAccessToken(id);
+    const RefreshToken = createRefreshToken(id);
+    res.cookie("access_token", AccessToken, accessTokenOptions);
+    res.cookie("refresh_token", RefreshToken, refreshTokenOptions);
+    res.status(200).json({
+      success: true,
+      refresh_token: RefreshToken,
+      access_token: AccessToken,
+    });
   } catch (err) {
     ErrorHandler(err, 400, res);
   }
