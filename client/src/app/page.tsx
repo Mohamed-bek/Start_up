@@ -83,11 +83,17 @@ export default function App() {
   const [purchases, setPurchases] = useState<IPurchase[]>();
   const getPurchases = async () => {
     try {
+      console.log("fetch data");
       const response = await fetch("http://localhost:8000/admin-purchases");
+      let data = await response.json();
+      console.log(data);
       if (!response.ok) {
-        throw new Error("Failed to fetch data");
+        if ((data.err as string).includes("Access Token expired")) {
+          const response = await fetch("http://localhost:8000/refresh_token");
+          data = await response.json();
+          console.log(data);
+        }
       }
-      const data = await response.json();
       setMonths(data.analyticsUsers.months);
       setPurchasesData(data.analyticsUsers.counts);
       setPurchases(data.purchases);
