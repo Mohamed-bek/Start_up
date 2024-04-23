@@ -37,14 +37,14 @@ export const createRefreshToken = (id: string) => {
 export const accessTokenOptions: TokenOptions = {
   expires: new Date(Date.now() + accessTokenExpires * 60 * 1000),
   maxAge: accessTokenExpires * 60 * 1000,
-  HttpOnly: true,
+  HttpOnly: false,
   sameSite: "lax",
 };
 
 export const refreshTokenOptions: TokenOptions = {
   expires: new Date(Date.now() + refreshTokenExpires * 60 * 60 * 24 * 1000),
   maxAge: refreshTokenExpires * 60 * 60 * 24 * 1000,
-  HttpOnly: true,
+  HttpOnly: false,
   sameSite: "lax",
 };
 
@@ -62,13 +62,10 @@ export const SendTokens = async (
     "EX",
     `${process.env.REDIS_EXPIRES_USER}`
   );
-
-  process.env.NODE_ENV === "production"
-    ? (accessTokenOptions.secure = true)
-    : null;
+  console.log("token");
   res.cookie("refresh_token", refreshToken, refreshTokenOptions);
   res.cookie("access_token", accessToken, accessTokenOptions);
-
+  console.log("token end");
   const { email, firstName, lastName, birthday, avatar, _id, role } = user;
   res.status(statusCode).json({
     success: true,

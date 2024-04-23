@@ -11,6 +11,9 @@ export const isAuthorized = async (
   try {
     let access_token = req.headers.authorization;
     if (!access_token) {
+      console.log("Tokens", req.cookies);
+      console.log("Access Tokens", req.cookies.access_token);
+      console.log("refresh Tokens", req.cookies.refresh_token);
       access_token = req.cookies.access_token;
       if (!access_token) {
         throw new Error(`Access Token expired`);

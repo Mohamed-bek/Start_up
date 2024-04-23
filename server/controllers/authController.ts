@@ -111,6 +111,7 @@ export const login = async (req: Request, res: Response) => {
     if (!(await bcrypt.compare(password, user.password))) {
       throw new Error("Password is incorrect");
     }
+    res.cookie("user", { hm: "mohamed" });
     SendTokens(user, 200, res, req);
   } catch (err) {
     ErrorHandler(err, 400, res);
