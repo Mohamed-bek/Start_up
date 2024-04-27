@@ -16,7 +16,7 @@ export default function NotFound(props: Props) {
           </p>
           <a
             href="/login"
-            className="block px-5 py-3 ml-5 rounded-lg my-4 bg-[#1a9df4] text-[1.3rem] text-white font-semibold w-fit"
+            className="block px-5 py-3 ml-5 rounded-lg my-4 bg-primary text-[1.3rem] text-white font-semibold w-fit"
           >
             {" "}
             back to login{" "}

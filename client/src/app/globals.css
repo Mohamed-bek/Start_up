@@ -6,6 +6,7 @@
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
+  --color-primary: #009245;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,7 +24,7 @@
 }
 
 .sec {
-  height: calc(100vh - 80px);
+  height: calc(100vh - 97px);
 }
 
 .box2 {

@@ -141,18 +141,15 @@ export const updateUserRole = async (req: Request, res: Response) => {
 export const refreshAccessToken = async (req: Request, res: Response) => {
   try {
     let refresh_token = req.headers.authorization;
-    if (!refresh_token) {
-      refresh_token = req.cookies.refresh_token;
-      if (!refresh_token) {
-        throw new Error(`Refresh Token expired you must login again`);
-      }
+    if (!refresh_token || refresh_token === "") {
+      throw new Error(`Refresh Token expired you must login again`);
     }
     const { id } = jwt.verify(
       refresh_token,
       process.env.REFRESH_TOKEN as string
     ) as JwtPayload;
     if (!id) {
-      throw new Error("Please the Id is deadline");
+      throw new Error("Please the Id is deadlin");
     }
     const AccessToken = createAccessToken(id);
     const RefreshToken = createRefreshToken(id);
@@ -164,6 +161,6 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
       access_token: AccessToken,
     });
   } catch (err) {
-    ErrorHandler(err, 400, res);
+    ErrorHandler("you have to login", 400, res);
   }
 };

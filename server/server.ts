@@ -71,7 +71,7 @@ const connectionDB = async () => {
 connectionDB();
 server.use(limiter);
 server.use(authRouter);
-// server.use(isAuthorized);
+server.use(isAuthorized);
 server.use(plantRoute);
 server.use(purchaseRouter);
 server.use(articleRouter);

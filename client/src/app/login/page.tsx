@@ -41,6 +41,14 @@ const page = (props: Props) => {
     if (res.ok) {
       if (data.user.role === "admin") {
         window.localStorage.setItem("user", JSON.stringify(data.user));
+        window.localStorage.setItem(
+          "accessToken",
+          JSON.stringify(data.accessToken)
+        );
+        window.localStorage.setItem(
+          "refreshToken",
+          JSON.stringify(data.refreshToken)
+        );
         window.location.href = "/";
       } else {
         setPassword("");
@@ -105,7 +113,7 @@ const page = (props: Props) => {
                 )}
               </div>
               <button
-                className="w-3/5 py-2 text-center rounded-lg bg-[#1a9df4] block mx-auto text-white font-medium"
+                className="w-3/5 py-2 text-center rounded-lg bg-primary block mx-auto text-white font-medium"
                 onClick={(e) => Login(e)}
               >
                 {" "}
@@ -114,7 +122,7 @@ const page = (props: Props) => {
             </form>
           </div>
         </div>
-        <div className="w-1/2 h-full bg-[#1a9df4] rounded-md flex justify-center items-center">
+        <div className="w-1/2 h-full bg-primary rounded-md flex justify-center items-center">
           <img src="/Admin-bro.png" className="w-[90%]" alt="" />
         </div>
       </div>

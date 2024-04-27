@@ -15,7 +15,7 @@ userRouter.put("/user_avatar", updateUserAvatar);
 userRouter.get("/users", getUsers);
 userRouter.get(
   "/admin-purchases",
-  // isAuthorizedRole(ERole.ADMIN),
+  isAuthorizedRole(ERole.ADMIN),
   getAdminInfoPurchases
 );
 export default userRouter;

@@ -68,7 +68,6 @@ export const getUsers = async (req: Request, res: Response) => {
 
 export const getAdminInfoPurchases = async (req: Request, res: Response) => {
   try {
-    console.log("admin info");
     const user = (req as any).user;
     const totaleSellers = await User.countDocuments({ role: ERole.ADMIN });
     const totaleUsers = await User.countDocuments();

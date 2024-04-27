@@ -83,15 +83,56 @@ export default function App() {
   const [purchases, setPurchases] = useState<IPurchase[]>();
   const getPurchases = async () => {
     try {
-      console.log("fetch data");
-      const response = await fetch("http://localhost:8000/admin-purchases");
+      let response = await fetch("http://localhost:8000/admin-purchases", {
+        method: "GET",
+        headers: {
+          Authorization: `${JSON.parse(
+            window.localStorage.getItem("accessToken") || ""
+          )}`,
+          "Content-Type": "application/json",
+        },
+      });
       let data = await response.json();
-      console.log(data);
       if (!response.ok) {
-        if ((data.err as string).includes("Access Token expired")) {
-          const response = await fetch("http://localhost:8000/refresh_token");
+        if (
+          (data.err as string).includes("Access Token expired") ||
+          (data.err as string).includes("jwt expired")
+        ) {
+          response = await fetch("http://localhost:8000/refresh_token", {
+            method: "GET",
+            headers: {
+              Authorization: `${JSON.parse(
+                window.localStorage.getItem("refreshToken") || ""
+              )}`,
+              "Content-Type": "application/json",
+            },
+          });
           data = await response.json();
-          console.log(data);
+          if (response.ok) {
+            window.localStorage.setItem(
+              "refreshToken",
+              JSON.stringify(data.refresh_token)
+            );
+            window.localStorage.setItem(
+              "accessToken",
+              JSON.stringify(data.access_token)
+            );
+            response = await fetch("http://localhost:8000/admin-purchases", {
+              method: "GET",
+              headers: {
+                Authorization: `${JSON.parse(
+                  window.localStorage.getItem("accessToken") || ""
+                )}`,
+                "Content-Type": "application/json",
+              },
+            });
+            if (!response.ok) {
+              window.location.href = "/error";
+            }
+            data = await response.json();
+          } else {
+            window.location.href = "/login";
+          }
         }
       }
       setMonths(data.analyticsUsers.months);
@@ -118,8 +159,8 @@ export default function App() {
       {
         label: "Purchases Analysis",
         data: purchasesData,
-        backgroundColor: "rgba(54, 162, 235, 0.5)",
-        borderColor: "rgba(54, 162, 235, 1)",
+        backgroundColor: "rgb(3 217 104 / 65%)",
+        borderColor: "rgb(0 146 68)",
         borderWidth: 1,
         barThickness: 35,
       },
@@ -132,8 +173,8 @@ export default function App() {
       {
         label: "Visitor Analysis",
         data: visitorData,
-        backgroundColor: "rgba(54, 162, 235, 0.5)", // Adjust color as needed
-        borderColor: "rgba(54, 162, 235, 1)", // Adjust color as needed
+        backgroundColor: "rgb(3 217 104 / 65%)",
+        borderColor: "rgb(0 146 68)",
         borderWidth: 1,
         barThickness: 35,
       },
@@ -158,10 +199,16 @@ export default function App() {
   };
   return (
     <div className="w-full h-[100vh] bg-grey">
-      <header className="w-full p-4 bg-white flex items-center justify-between">
+      <header className="w-full px-4 py-1 bg-white flex items-center justify-between">
         {" "}
         <div className="flex items-center gap-20">
-          <RiDashboardFill className="text-[#1a9df4] text-[2.3rem]" />{" "}
+          <div className="w-[100px] flex justify-center items-center">
+            <img
+              className="w-full scale-125"
+              src="/logo.png"
+              alt="Vertic City"
+            />
+          </div>
           <div className="bg-[#e5e7eb] flex items-center w-fit pl-2">
             <IoSearchOutline className="text-[1.2rem]" />
             <input
@@ -169,7 +216,7 @@ export default function App() {
               type="text"
               className=" border-none focus:outline-none bg-transparent ml-2"
             />
-            <span className="py-2 px-3 bg-[#1a9df4] text-[white] cursor-pointer">
+            <span className="py-2 px-3 bg-primary text-[white] cursor-pointer">
               {" "}
               Search{" "}
             </span>
@@ -199,7 +246,7 @@ export default function App() {
                 );
               }}
               className={`text-[1.7rem] mb-7 cursor-pointer ${
-                active === "purchases" ? "text-[#1a9df4]" : ""
+                active === "purchases" ? "text-primary" : ""
               }`}
             />
             <FaUsers
@@ -215,13 +262,15 @@ export default function App() {
                 );
               }}
               className={`text-[1.7rem] mb-7 cursor-pointer ${
-                active === "users" ? "text-[#1a9df4]" : ""
+                active === "users" ? "text-primary" : ""
               }`}
             />
           </div>
           <TbLogout
             onClick={() => {
               window.localStorage.removeItem("user");
+              window.localStorage.removeItem("accessToken");
+              window.localStorage.removeItem("refreshToken");
               window.location.href = "/login";
             }}
             className="text-[1.7rem] cursor-pointer"
@@ -233,9 +282,9 @@ export default function App() {
             className="h-full p-5 [transition:0.3s] translate-x-0"
           >
             <div className="w-full h-[35%] flex items-center gap-5 mb-5">
-              <div className="w-1/3 text-white h-full bg-[#1a9df4] p-4 px-7 rounded-lg">
+              <div className="w-1/3 text-white h-full bg-primary p-4 px-7 rounded-lg">
                 <div className="flex items-center justify-between">
-                  <div className="h-12 w-12 p-1 bg-[#1ab5f4] flex justify-center items-center">
+                  <div className="h-12 w-12 p-1 bg-[#49e679ba] rounded-sm flex justify-center items-center">
                     <FaCartShopping className="text-[1.8rem]" />
                   </div>
                   <div>
@@ -261,8 +310,8 @@ export default function App() {
               </div>
               <div className="w-1/3 h-full bg-white p-4 px-7 rounded-lg">
                 <div className="flex items-center justify-between">
-                  <div className="h-12 w-12 p-1 bg-[#1ab5f447] flex justify-center items-center">
-                    <PiPackageFill className="text-[1.8rem] text-[#1a9df4]" />
+                  <div className="h-12 w-12 p-1 rounded-sm bg-[#39cf6a5c] flex justify-center items-center">
+                    <PiPackageFill className="text-[1.8rem] text-primary" />
                   </div>
                   <div>
                     <img className=" scale-150" src="/increase.png" alt="" />
@@ -283,8 +332,8 @@ export default function App() {
               </div>
               <div className="w-1/3 h-full bg-white p-4 px-7 rounded-lg">
                 <div className="flex items-center justify-between">
-                  <div className="h-12 w-12 p-1 bg-[#1ab5f447] flex justify-center items-center">
-                    <FaUserTie className="text-[1.8rem] text-[#1a9df4]" />
+                  <div className="h-12 w-12 p-1 bg-[#39cf6a5c] rounded-sm flex justify-center items-center">
+                    <FaUserTie className="text-[1.8rem] text-primary" />
                   </div>
                   <div>
                     <img className=" scale-150" src="/increase.png" alt="" />
@@ -305,7 +354,7 @@ export default function App() {
               </div>
             </div>
             <div className="box2 w-full flex items-center gap-5">
-              <div className="w-[65%] h-full bg-white ">
+              <div className="w-[65%] h-full bg-white rounded-lg">
                 <div className="flex justify-between items-center px-3 py-3">
                   <div className="w-[30%]">product </div>
                   <div className="w-[30%] pl-5"> seller </div>
@@ -363,7 +412,7 @@ export default function App() {
                   )}
                 </div>
               </div>
-              <div className="w-[35%] h-full bg-white flex justify-center items-center">
+              <div className="w-[35%] h-full rounded-lg bg-white flex justify-center items-center">
                 <ChartComponent type="bar" data={data} options={options} />
               </div>
             </div>
@@ -373,9 +422,9 @@ export default function App() {
             className="h-full [transition:0.3s] p-5 w-full -translate-y-full -translate-x-full"
           >
             <div className="w-full h-[35%] flex items-center gap-5 mb-5">
-              <div className="w-[30%] text-white h-full bg-[#1a9df4] p-4 px-7 rounded-lg">
+              <div className="w-[30%] text-white h-full bg-primary p-4 px-7 rounded-lg">
                 <div className="flex items-center justify-between">
-                  <div className="h-12 w-12 p-1 bg-[#1ab5f4] flex justify-center items-center">
+                  <div className="h-12 w-12 p-1 bg-[#49e679ba] flex justify-center items-center">
                     <FaCartShopping className="text-[1.8rem]" />
                   </div>
                   <div>
@@ -401,8 +450,8 @@ export default function App() {
               </div>
               <div className="w-[30%] h-full bg-white p-4 px-7 rounded-lg">
                 <div className="flex items-center justify-between">
-                  <div className="h-12 w-12 p-1 bg-[#1ab5f447] flex justify-center items-center">
-                    <PiPackageFill className="text-[1.8rem] text-[#1a9df4]" />
+                  <div className="h-12 w-12 p-1 bg-[#39cf6a5c] flex justify-center items-center">
+                    <PiPackageFill className="text-[1.8rem] text-primary" />
                   </div>
                   <div>
                     <img className=" scale-150" src="/increase.png" alt="" />
@@ -421,7 +470,7 @@ export default function App() {
                   Started from 1 mars 2024{" "}
                 </p>
               </div>
-              <div className="w-[40%] h-full bg-white flex justify-center items-center">
+              <div className="w-[40%] h-full bg-white flex justify-center items-center rounded-lg">
                 <ChartComponent
                   type="bar"
                   data={dataVisitor}
@@ -429,8 +478,8 @@ export default function App() {
                 />
               </div>
             </div>
-            <div className="box2 w-full flex items-center gap-5">
-              <div className="w-full h-full bg-white ">
+            <div className="box2 w-full flex items-center gap-5 ">
+              <div className="w-full h-full bg-white rounded-lg ">
                 <div className="flex justify-between items-center px-3 py-3">
                   <div className="w-[30%]">User </div>
                   <div className="w-[30%] pl-5"> Email </div>

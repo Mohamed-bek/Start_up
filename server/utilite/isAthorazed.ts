@@ -1,6 +1,6 @@
 import { Response, Request, NextFunction } from "express";
 import ErrorHandler from "../ErrorHandler";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import redis from "./redis";
 
 export const isAuthorized = async (
@@ -10,22 +10,14 @@ export const isAuthorized = async (
 ) => {
   try {
     let access_token = req.headers.authorization;
-    if (!access_token) {
-      console.log("Tokens", req.cookies);
-      console.log("Access Tokens", req.cookies.access_token);
-      console.log("refresh Tokens", req.cookies.refresh_token);
-      access_token = req.cookies.access_token;
-      if (!access_token) {
-        throw new Error(`Access Token expired`);
-      }
+    console.log(access_token);
+    if (!access_token || access_token === "") {
+      throw new Error(`Access Token expired`);
     }
     const { id } = jwt.verify(
       access_token,
       process.env.ACCESS_TOKEN as string
-    ) as {
-      id: any;
-      type: string;
-    };
+    ) as JwtPayload;
     const user = await redis.get(id);
     if (!user) {
       throw new Error("user not found");

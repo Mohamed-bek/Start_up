@@ -19,6 +19,6 @@ authRouter.put(
   isAuthorizedRole(ERole.ADMIN),
   updateUserRole
 );
-authRouter.put("/refresh_token", refreshAccessToken);
+authRouter.get("/refresh_token", refreshAccessToken);
 
 export default authRouter;
